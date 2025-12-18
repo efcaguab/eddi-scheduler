@@ -129,11 +129,14 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
             
             print(f"  Attempt {attempt}/{max_attempts}: sta={sta}, div={div}W")
             
-            if sta == 6:
+            if sta is None:
+                print(f"  → Device status unavailable, retrying...")
+                continue
+            elif sta == 6:
                 print(f"  → Device still stopped (sta=6), waiting for start...")
                 continue
-            elif sta is not None:
-                # Any status except 6 means the device has started successfully
+            else:
+                # Any status except 6 (and not None) means the device has started successfully
                 description = status_descriptions.get(sta, f"running (code {sta})")
                 print(f"✓ Device started successfully (sta={sta}, {description}, {div}W)")
                 return True
