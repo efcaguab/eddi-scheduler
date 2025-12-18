@@ -38,15 +38,33 @@ In your repository settings, add these secrets:
 
 The workflow is in `.github/workflows/eddi-scheduler.yml` and will run automatically once secrets are configured.
 
-### 3. Manual Testing
+### 3. Testing
 
-You can manually trigger the workflow:
+#### Local Testing (Recommended First)
+
+Test the workflow locally before deploying:
+
+```bash
+# Test stop command
+./test_workflow.sh stop
+
+# Test start command
+./test_workflow.sh start
+```
+
+This requires a `.secrets` file in the project directory with your credentials (see TESTING.md).
+
+#### GitHub Actions Testing
+
+Once merged to main, you can manually trigger the workflow:
 
 1. Go to Actions tab in GitHub
 2. Select "Eddi Scheduler" workflow
 3. Click "Run workflow"
 4. Choose "start" or "stop" command
 5. Click "Run workflow" button
+
+**Note**: GitHub Actions workflows only appear in the Actions tab after the branch is merged to main.
 
 ## Monitoring
 
@@ -59,24 +77,41 @@ You can manually trigger the workflow:
 
 ## Troubleshooting
 
+**Local testing failing?**
+- Ensure `.secrets` file exists with correct credentials
+- Check device is online: `pixi run python -m eddi_scheduler.cli status`
+- Run with verbose output: `pixi run python scripts/eddi_control.py stop --serial ... --api-key ... --base-url ...`
+
 **Workflow not running?**
-- Check that secrets are added correctly
+- Workflows only appear after merging to main branch
+- Check that secrets are added correctly in GitHub repository settings
 - Verify GitHub Actions is enabled for your repository
 
 **Commands failing?**
 - Check workflow logs for error messages
 - Verify device is online and accessible
 - Check API credentials are correct
+- Stop command needs ~3 minutes to reach sta=6
+- Start command may stay at sta=1 if no surplus power available
 
 **Wrong timezone?**
-- The workflow automatically handles NZ daylight saving time
+- The workflow automatically handles NZ daylight saving time (Pacific/Auckland)
 - Logs show the detected NZ time for verification
+- Test timezone logic: `pixi run python -c "import pytz; from datetime import datetime; print(datetime.now(pytz.timezone('Pacific/Auckland')))"`
 
 ## Technical Details
 
 - **Helper Script**: `scripts/eddi_control.py`
 - **Workflow**: `.github/workflows/eddi-scheduler.yml`
+- **Local Test Script**: `test_workflow.sh`
 - **Timezone**: `Pacific/Auckland` (UTC+12/+13 with DST)
 - **Schedule Window**: ±30 minutes (commands execute within 30 minutes of scheduled time)
 - **Max Retries**: 3 attempts with 30-second delays
-- **Verification Interval**: Checks status every 10 seconds, up to 5 times
+- **Stop Verification**: 
+  - Initial wait: 30 seconds
+  - Checks every 15 seconds, up to 10 times (~2.5 minutes total)
+  - Success: sta=6 (Stopped)
+- **Start Verification**: 
+  - Initial wait: 50 seconds
+  - Checks every 10 seconds, up to 5 times
+  - Success: sta=3 (Diverting) or sta=1 (Paused, waiting for surplus power)

@@ -39,16 +39,22 @@
 - Status should be verified
 - **Expected**: Device reaches `sta=3` (diverting) OR `sta=1` (waiting for power)
 
-## Current Issue: Stop State Clarification Needed
+## Status Code Behavior (Resolved)
 
-From testing, we observe:
-- **sta=1**: Paused (what we get from API stop command)
-- **sta=6**: Stopped (different state)
+From testing, we confirmed:
+- **sta=1**: Paused/Running but waiting for power (intermediate state)
+- **sta=3**: Diverting (actively heating)
+- **sta=6**: Stopped (final stopped state)
 
-### Questions:
-1. When you manually press "Stop" on the physical eddi device, what `sta` code shows up?
-2. Is `sta=1` (Paused, not diverting) acceptable for the scheduler?
-3. Do we need to achieve `sta=6` specifically? If so, how?
+### Stop Command Sequence:
+Device transitions: `sta=3` → `sta=1` (brief) → `sta=6` (final)
+- Takes approximately 30-180 seconds total
+- Script waits for `sta=6` before declaring success
+
+### Start Command Sequence:
+Device transitions: `sta=6` → `sta=1` (waiting for power) or `sta=3` (if power available)
+- Takes approximately 50-100 seconds
+- Script accepts `sta=1` or `sta=3` as success
 
 ## Local Testing (Alternative)
 
@@ -74,13 +80,13 @@ pixi run python scripts/eddi_control.py start \
 
 | Code | Status | Meaning |
 |------|--------|---------|
-| 1 | Paused | Not diverting (result of API stop) |
+| 1 | Paused | Running but not diverting (waiting for power or intermediate state) |
 | 3 | Diverting | Actively heating |
-| 6 | Stopped | Different stopped state |
+| 6 | Stopped | Fully stopped (required for stop command success) |
 
 ## Next Steps
 
-1. **Clarify** sta=6 vs sta=1 requirement
-2. **Test** workflow on GitHub manually
-3. **Adjust** script if needed based on test results
+1. ✅ **Local testing** - Completed successfully
+2. **Merge to main** - Required for GitHub Actions to appear
+3. **Test on GitHub** - Use manual trigger after merge
 4. **Monitor** first scheduled run
