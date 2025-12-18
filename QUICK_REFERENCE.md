@@ -2,8 +2,8 @@
 
 ## Your Credentials
 ```bash
-Hub Serial: E23510540
-API Key: CCMcv8sDwDLfkiaCuJojzEPo
+Hub Serial: YOUR_HUB_SERIAL
+API Key: YOUR_API_KEY
 ```
 
 ## One-Time Setup
@@ -12,8 +12,8 @@ API Key: CCMcv8sDwDLfkiaCuJojzEPo
 pip install -e .
 
 # Set environment variables (add to ~/.bashrc or ~/.zshrc)
-export EDDI_SERIAL_NUMBER="E23510540"
-export EDDI_API_KEY="CCMcv8sDwDLfkiaCuJojzEPo"
+export EDDI_SERIAL_NUMBER="YOUR_HUB_SERIAL"
+export EDDI_API_KEY="YOUR_API_KEY"
 ```
 
 ## Daily Commands
@@ -37,7 +37,7 @@ eddi start
 If you haven't set up environment variables, use the full command:
 
 ```bash
-eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo <command>
+eddi --serial YOUR_HUB_SERIAL --api-key YOUR_API_KEY <command>
 ```
 
 ## Automation Examples

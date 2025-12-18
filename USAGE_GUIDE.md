@@ -18,8 +18,8 @@ You have two options for providing credentials:
 Add these to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-export EDDI_SERIAL_NUMBER="E23510540"
-export EDDI_API_KEY="CCMcv8sDwDLfkiaCuJojzEPo"
+export EDDI_SERIAL_NUMBER="your_hub_serial_number"
+export EDDI_API_KEY="your_api_key"
 ```
 
 Then reload your shell:
@@ -32,7 +32,7 @@ source ~/.bashrc  # or source ~/.zshrc
 Pass credentials with each command:
 
 ```bash
-eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo <command>
+eddi --serial YOUR_HUB_SERIAL --api-key YOUR_API_KEY <command>
 ```
 
 ## Usage Examples
@@ -44,7 +44,7 @@ eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo <command>
 eddi status
 
 # Or with command line options:
-eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo status
+eddi --serial YOUR_HUB_SERIAL --api-key YOUR_API_KEY status
 ```
 
 This will show you:
@@ -60,12 +60,12 @@ This will show you:
 eddi stop
 
 # With command line options:
-eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo stop
+eddi --serial YOUR_HUB_SERIAL --api-key YOUR_API_KEY stop
 ```
 
 When successful, you'll see:
 ```
-✓ Eddi device 23510540 set to STOP mode
+✓ Eddi device <serial> set to STOP mode
 ```
 
 ### Return your eddi to NORMAL mode
@@ -75,12 +75,12 @@ When successful, you'll see:
 eddi start
 
 # With command line options:
-eddi --serial E23510540 --api-key CCMcv8sDwDLfkiaCuJojzEPo start
+eddi --serial YOUR_HUB_SERIAL --api-key YOUR_API_KEY start
 ```
 
 When successful, you'll see:
 ```
-✓ Eddi device 23510540 set to NORMAL mode
+✓ Eddi device <serial> set to NORMAL mode
 ```
 
 ## Automating with Cron or Scripts
@@ -149,7 +149,7 @@ Use it:
 ### "No eddi devices found"
 
 - Check your credentials are correct
-- Verify your hub serial number (E23510540)
+- Verify your hub serial number
 - Ensure your API key is valid
 
 ### "Error getting status: Connection error"
