@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from eddi_scheduler.client import EddiClient
+from eddi_scheduler.cli import STATUS_CODES
 
 # Constants for timing and verification
 STOP_MAX_ATTEMPTS = 10
@@ -84,8 +85,8 @@ def wait_and_verify_stop(client, device_serial, max_attempts=STOP_MAX_ATTEMPTS, 
 
 def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS, wait_between=START_WAIT_BETWEEN):
     """
-    Verify that device has started (sta=3 for diverting OR sta=1 for paused/waiting).
-    Both sta=1 and sta=3 are acceptable for start command.
+    Verify that device has started (any status except sta=6 stopped).
+    Success means sta != 6 (can be 1, 3, or other codes, but NOT 6).
     
     Args:
         client: EddiClient instance
@@ -94,9 +95,9 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
         wait_between: Seconds to wait between attempts
     
     Returns:
-        bool: True if started (sta=3 or sta=1), False otherwise
+        bool: True if started (sta != 6), False otherwise
     """
-    print(f"Verifying device started (expecting sta=3 diverting OR sta=1 waiting)...")
+    print(f"Verifying device started (expecting any status EXCEPT sta=6 stopped)...")
     
     device_not_found_count = 0
     
@@ -123,11 +124,16 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
             
             print(f"  Attempt {attempt}/{max_attempts}: sta={sta}, div={div}W")
             
-            if sta == 3:
-                print(f"✓ Device started and diverting (sta=3, {div}W)")
-                return True
-            elif sta == 1:
-                print(f"✓ Device started in paused state (sta=1, waiting for surplus power)")
+            if sta is None:
+                print(f"  → Device status unavailable, retrying...")
+                continue
+            elif sta == 6:
+                print(f"  → Device still stopped (sta=6), waiting for start...")
+                continue
+            else:
+                # Any status except 6 (and not None) means the device has started successfully
+                status_text = STATUS_CODES.get(sta, f"Unknown ({sta})")
+                print(f"✓ Device started successfully (sta={sta}, {status_text}, {div}W)")
                 return True
                 
         except Exception as e:
