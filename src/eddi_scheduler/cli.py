@@ -2,6 +2,7 @@
 
 import sys
 import os
+import json
 from pathlib import Path
 from typing import Optional
 import click
@@ -17,7 +18,8 @@ STATUS_CODES = {
     6: "Stopped"
 }
 
-# Load .env file if it exists
+# Load .env file if it exists in current working directory
+# Note: The .env file must be in the directory where you run the command
 env_path = Path.cwd() / '.env'
 if env_path.exists():
     load_dotenv(env_path)
@@ -52,6 +54,17 @@ def cli(ctx, serial: str, api_key: str, base_url: str):
     Set EDDI_SERIAL_NUMBER and EDDI_API_KEY environment variables
     to avoid passing credentials on command line.
     """
+    # Validate that required credentials are provided
+    if not serial:
+        click.echo("Error: Missing --serial option or EDDI_SERIAL_NUMBER environment variable", err=True)
+        click.echo("Tip: Create a .env file in the current directory with EDDI_SERIAL_NUMBER=your_serial", err=True)
+        sys.exit(1)
+    
+    if not api_key:
+        click.echo("Error: Missing --api-key option or EDDI_API_KEY environment variable", err=True)
+        click.echo("Tip: Create a .env file in the current directory with EDDI_API_KEY=your_key", err=True)
+        sys.exit(1)
+    
     ctx.ensure_object(dict)
     ctx.obj["client"] = EddiClient(serial, api_key, base_url)
 
@@ -80,7 +93,6 @@ def status(ctx, device: Optional[str]):
                 sys.exit(1)
         
         for eddi in devices:
-            import json
             serial = eddi.get("sno")
             sta = eddi.get("sta", 0)
             status_text = STATUS_CODES.get(sta, f"Unknown ({sta})")
