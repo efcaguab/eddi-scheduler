@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
     "requests>=2.31.0",
     "click>=8.1.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -41,3 +42,25 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 eddi_scheduler = ["py.typed"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+eddi-scheduler = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+requests = ">=2.32.5,<3"
+click = ">=8.3.1,<9"
+python-dotenv = ">=1.2.1,<2"
+
+[tool.pixi.feature.dev.dependencies]
+pytest = ">=9.0.2,<10"
+pytest-cov = ">=7.0.0,<8"
