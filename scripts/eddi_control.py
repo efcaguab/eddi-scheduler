@@ -14,9 +14,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from eddi_scheduler.client import EddiClient
 
 
-def wait_and_verify_stop(client, device_serial, max_attempts=5, wait_between=10):
+def wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15):
     """
     Verify that device has stopped (sta=6).
+    Device transitions: sta=3 (diverting) -> sta=1 (paused) -> sta=6 (stopped)
+    This can take up to 2-3 minutes.
     
     Args:
         client: EddiClient instance
@@ -28,6 +30,7 @@ def wait_and_verify_stop(client, device_serial, max_attempts=5, wait_between=10)
         bool: True if stopped (sta=6), False otherwise
     """
     print(f"Verifying device stopped (expecting sta=6)...")
+    print(f"Note: Device may go through sta=1 (paused) before reaching sta=6 (stopped)")
     
     for attempt in range(1, max_attempts + 1):
         time.sleep(wait_between)
@@ -48,6 +51,8 @@ def wait_and_verify_stop(client, device_serial, max_attempts=5, wait_between=10)
             if sta == 6:
                 print(f"✓ Device stopped successfully (sta=6)")
                 return True
+            elif sta == 1:
+                print(f"  → Device in paused state (sta=1), continuing to wait for sta=6...")
             
         except Exception as e:
             print(f"  Attempt {attempt}/{max_attempts}: Error checking status: {e}")
@@ -134,9 +139,10 @@ def execute_command_with_retry(command, client, device_serial, max_retries=3):
             
             # Wait initial period for command to take effect
             if command == "stop":
-                print(f"Waiting 15 seconds for stop command to take effect...")
-                time.sleep(15)
-                if wait_and_verify_stop(client, device_serial):
+                print(f"Waiting 30 seconds for stop command to take effect...")
+                time.sleep(30)
+                # Stop can take 2-3 minutes: sta=3 -> sta=1 -> sta=6
+                if wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15):
                     return True
             else:  # start
                 print(f"Waiting 50 seconds for start command to take effect...")
