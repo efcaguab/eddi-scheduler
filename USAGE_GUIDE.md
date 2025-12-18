@@ -18,8 +18,8 @@ You have two options for providing credentials:
 Add these to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-export EDDI_SERIAL_NUMBER="your_hub_serial_number"
-export EDDI_API_KEY="your_api_key"
+export EDDI_SERIAL_NUMBER="YOUR_HUB_SERIAL"
+export EDDI_API_KEY="YOUR_API_KEY"
 ```
 
 Then reload your shell:
