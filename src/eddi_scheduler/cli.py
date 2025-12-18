@@ -1,7 +1,6 @@
 """Command-line interface for eddi-scheduler."""
 
 import sys
-import os
 import json
 from pathlib import Path
 from typing import Optional
