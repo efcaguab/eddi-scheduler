@@ -1,21 +1,9 @@
 """Command-line interface for eddi-scheduler."""
 
 import sys
-import os
 from typing import Optional
 import click
 from .client import EddiClient
-
-
-def get_credentials() -> tuple[Optional[str], Optional[str]]:
-    """Get credentials from environment variables.
-
-    Returns:
-        Tuple of (serial_number, api_key)
-    """
-    serial = os.environ.get("EDDI_SERIAL_NUMBER")
-    api_key = os.environ.get("EDDI_API_KEY")
-    return serial, api_key
 
 
 @click.group()
