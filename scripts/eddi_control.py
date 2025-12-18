@@ -13,10 +13,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from eddi_scheduler.client import EddiClient
 
+# Constants for timing and verification
+STOP_MAX_ATTEMPTS = 10
+STOP_WAIT_BETWEEN = 15  # seconds
+STOP_INITIAL_WAIT = 30  # seconds
 
-def wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15):
+START_MAX_ATTEMPTS = 5
+START_WAIT_BETWEEN = 10  # seconds
+START_INITIAL_WAIT = 50  # seconds
+
+MAX_RETRIES = 3
+RETRY_DELAY = 30  # seconds
+
+
+def wait_and_verify_stop(client, device_serial, max_attempts=STOP_MAX_ATTEMPTS, wait_between=STOP_WAIT_BETWEEN):
     """
-    Verify that device has stopped (sta=6).
+    Verify that device has stopped (sta=6) - ONLY sta=6 is acceptable.
     Device transitions: sta=3 (diverting) -> sta=1 (paused) -> sta=6 (stopped)
     This can take up to 2-3 minutes.
     
@@ -29,8 +41,10 @@ def wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15
     Returns:
         bool: True if stopped (sta=6), False otherwise
     """
-    print(f"Verifying device stopped (expecting sta=6)...")
+    print(f"Verifying device stopped (expecting sta=6 ONLY)...")
     print(f"Note: Device may go through sta=1 (paused) before reaching sta=6 (stopped)")
+    
+    device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
         time.sleep(wait_between)
@@ -40,8 +54,15 @@ def wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15
             device = next((d for d in devices if str(d.get("sno")) == device_serial), None)
             
             if not device:
+                device_not_found_count += 1
                 print(f"  Attempt {attempt}/{max_attempts}: Device not found")
+                if device_not_found_count >= 3:
+                    print(f"✗ Device not found in 3+ consecutive attempts - check network/credentials")
+                    return False
                 continue
+            
+            # Reset counter if device is found
+            device_not_found_count = 0
             
             sta = device.get("sta")
             div = device.get("div", 0)
@@ -61,9 +82,10 @@ def wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15
     return False
 
 
-def wait_and_verify_start(client, device_serial, max_attempts=5, wait_between=10):
+def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS, wait_between=START_WAIT_BETWEEN):
     """
-    Verify that device has started (sta=3 for diverting).
+    Verify that device has started (sta=3 for diverting OR sta=1 for paused/waiting).
+    Both sta=1 and sta=3 are acceptable for start command.
     
     Args:
         client: EddiClient instance
@@ -72,9 +94,11 @@ def wait_and_verify_start(client, device_serial, max_attempts=5, wait_between=10
         wait_between: Seconds to wait between attempts
     
     Returns:
-        bool: True if started (sta=3), False otherwise
+        bool: True if started (sta=3 or sta=1), False otherwise
     """
-    print(f"Verifying device started (expecting sta=3 for diverting)...")
+    print(f"Verifying device started (expecting sta=3 diverting OR sta=1 waiting)...")
+    
+    device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
         time.sleep(wait_between)
@@ -84,8 +108,15 @@ def wait_and_verify_start(client, device_serial, max_attempts=5, wait_between=10
             device = next((d for d in devices if str(d.get("sno")) == device_serial), None)
             
             if not device:
+                device_not_found_count += 1
                 print(f"  Attempt {attempt}/{max_attempts}: Device not found")
+                if device_not_found_count >= 3:
+                    print(f"✗ Device not found in 3+ consecutive attempts - check network/credentials")
+                    return False
                 continue
+            
+            # Reset counter if device is found
+            device_not_found_count = 0
             
             sta = device.get("sta")
             div = device.get("div", 0)
@@ -95,9 +126,8 @@ def wait_and_verify_start(client, device_serial, max_attempts=5, wait_between=10
             if sta == 3:
                 print(f"✓ Device started and diverting (sta=3, {div}W)")
                 return True
-            elif sta == 1 and attempt == max_attempts:
-                print(f"⚠ Device in paused state (sta=1), may be waiting for surplus power")
-                # Consider this partial success - device is in normal mode, just no power to divert
+            elif sta == 1:
+                print(f"✓ Device started in paused state (sta=1, waiting for surplus power)")
                 return True
                 
         except Exception as e:
@@ -107,7 +137,7 @@ def wait_and_verify_start(client, device_serial, max_attempts=5, wait_between=10
     return False
 
 
-def execute_command_with_retry(command, client, device_serial, max_retries=3):
+def execute_command_with_retry(command, client, device_serial, max_retries=MAX_RETRIES):
     """
     Execute stop/start command with retry logic.
     
@@ -139,26 +169,26 @@ def execute_command_with_retry(command, client, device_serial, max_retries=3):
             
             # Wait initial period for command to take effect
             if command == "stop":
-                print(f"Waiting 30 seconds for stop command to take effect...")
-                time.sleep(30)
+                print(f"Waiting {STOP_INITIAL_WAIT} seconds for stop command to take effect...")
+                time.sleep(STOP_INITIAL_WAIT)
                 # Stop can take 2-3 minutes: sta=3 -> sta=1 -> sta=6
-                if wait_and_verify_stop(client, device_serial, max_attempts=10, wait_between=15):
+                if wait_and_verify_stop(client, device_serial):
                     return True
             else:  # start
-                print(f"Waiting 50 seconds for start command to take effect...")
-                time.sleep(50)
+                print(f"Waiting {START_INITIAL_WAIT} seconds for start command to take effect...")
+                time.sleep(START_INITIAL_WAIT)
                 if wait_and_verify_start(client, device_serial):
                     return True
             
             if retry < max_retries:
-                print(f"\nRetrying in 30 seconds...")
-                time.sleep(30)
+                print(f"\nRetrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
                 
         except Exception as e:
             print(f"✗ Error executing command: {e}")
             if retry < max_retries:
-                print(f"\nRetrying in 30 seconds...")
-                time.sleep(30)
+                print(f"\nRetrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
     
     print(f"\n✗ Command failed after {max_retries} attempts")
     return False

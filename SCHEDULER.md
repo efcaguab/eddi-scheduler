@@ -21,8 +21,8 @@ This repository includes a GitHub Actions workflow that automatically controls t
 
 ## Success Criteria
 
-- **STOP Command**: Device must reach `sta=6` (Stopped)
-- **START Command**: Device must reach `sta=3` (Diverting) or `sta=1` (Paused, waiting for surplus power)
+- **STOP Command**: Device must reach `sta=6` (Stopped) - ONLY sta=6 is acceptable
+- **START Command**: Device must reach `sta=3` (Diverting) OR `sta=1` (Paused, waiting for surplus power)
 
 ## Setup
 
@@ -105,13 +105,13 @@ Once merged to main, you can manually trigger the workflow:
 - **Workflow**: `.github/workflows/eddi-scheduler.yml`
 - **Local Test Script**: `test_workflow.sh`
 - **Timezone**: `Pacific/Auckland` (UTC+12/+13 with DST)
-- **Schedule Window**: ±30 minutes (commands execute within 30 minutes of scheduled time)
+- **Schedule Window**: 10 minutes (commands execute within 10 minutes of scheduled time)
 - **Max Retries**: 3 attempts with 30-second delays
 - **Stop Verification**: 
   - Initial wait: 30 seconds
   - Checks every 15 seconds, up to 10 times (~2.5 minutes total)
-  - Success: sta=6 (Stopped)
+  - Success: sta=6 (Stopped) ONLY
 - **Start Verification**: 
   - Initial wait: 50 seconds
   - Checks every 10 seconds, up to 5 times
-  - Success: sta=3 (Diverting) or sta=1 (Paused, waiting for surplus power)
+  - Success: sta=3 (Diverting) OR sta=1 (Paused, waiting for surplus power)

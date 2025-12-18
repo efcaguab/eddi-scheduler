@@ -19,7 +19,18 @@ fi
 
 # Load secrets
 echo "Loading secrets from .secrets file..."
-export $(cat .secrets | xargs)
+set -a
+source .secrets
+set +a
+
+# Validate required secrets are set
+if [ -z "$EDDI_SERIAL_NUMBER" ] || [ -z "$EDDI_API_KEY" ]; then
+    echo "Error: Required environment variables not set"
+    echo "Make sure .secrets contains:"
+    echo "  EDDI_SERIAL_NUMBER=your_serial"
+    echo "  EDDI_API_KEY=your_key"
+    exit 1
+fi
 
 # Check command argument
 COMMAND=${1:-stop}

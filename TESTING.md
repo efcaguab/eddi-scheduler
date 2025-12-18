@@ -32,7 +32,7 @@
 ### Stop Command Test
 - Command should be sent
 - Status should be verified
-- **Expected**: Device reaches `sta=6` OR `sta=1` (need clarification)
+- **Expected**: Device reaches `sta=6` (Stopped)
 
 ### Start Command Test  
 - Command should be sent
@@ -63,14 +63,14 @@ If GitHub Actions has issues, test locally:
 ```bash
 # Test stop command
 pixi run python scripts/eddi_control.py stop \
-  --serial 23510540 \
+  --serial YOUR_SERIAL \
   --api-key "YOUR_KEY" \
   --base-url "https://s18.myenergi.net" \
   --max-retries 1
 
 # Test start command
 pixi run python scripts/eddi_control.py start \
-  --serial 23510540 \
+  --serial YOUR_SERIAL \
   --api-key "YOUR_KEY" \
   --base-url "https://s18.myenergi.net" \
   --max-retries 1
