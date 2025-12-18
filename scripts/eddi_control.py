@@ -98,6 +98,12 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
     """
     print(f"Verifying device started (expecting any status EXCEPT sta=6 stopped)...")
     
+    # Status code descriptions for common states
+    status_descriptions = {
+        1: "paused/waiting for surplus power",
+        3: "actively diverting power"
+    }
+    
     device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
@@ -125,12 +131,9 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
             
             if sta == 6:
                 print(f"  → Device still stopped (sta=6), waiting for start...")
+                continue
             elif sta is not None:
                 # Any status except 6 means the device has started successfully
-                status_descriptions = {
-                    1: "paused/waiting for surplus power",
-                    3: "actively diverting power"
-                }
                 description = status_descriptions.get(sta, f"running (code {sta})")
                 print(f"✓ Device started successfully (sta={sta}, {description}, {div}W)")
                 return True
