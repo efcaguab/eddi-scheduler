@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from eddi_scheduler.client import EddiClient
+from eddi_scheduler.cli import STATUS_CODES
 
 # Constants for timing and verification
 STOP_MAX_ATTEMPTS = 10
@@ -98,14 +99,6 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
     """
     print(f"Verifying device started (expecting any status EXCEPT sta=6 stopped)...")
     
-    # Status code descriptions for common states
-    status_descriptions = {
-        1: "paused/waiting for surplus power",
-        3: "actively diverting power",
-        4: "boosting",
-        5: "max temp reached"
-    }
-    
     device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
@@ -139,8 +132,8 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
                 continue
             else:
                 # Any status except 6 (and not None) means the device has started successfully
-                description = status_descriptions.get(sta, f"active (code {sta})")
-                print(f"✓ Device started successfully (sta={sta}, {description}, {div}W)")
+                status_text = STATUS_CODES.get(sta, f"Unknown status (code {sta})")
+                print(f"✓ Device started successfully (sta={sta}, {status_text}, {div}W)")
                 return True
                 
         except Exception as e:
