@@ -27,6 +27,27 @@ MAX_RETRIES = 3
 RETRY_DELAY = 30  # seconds
 
 
+def _sanitize_api_response(response):
+    """
+    Sanitize API response for logging by redacting sensitive fields.
+    
+    Args:
+        response: API response (dict, str, or other type)
+    
+    Returns:
+        Sanitized response safe for logging
+    """
+    if isinstance(response, dict):
+        sanitized = response.copy()
+        # Redact common sensitive fields
+        sensitive_fields = ['api_key', 'apiKey', 'password', 'token', 'secret', 'auth']
+        for field in sensitive_fields:
+            if field in sanitized:
+                sanitized[field] = '***REDACTED***'
+        return sanitized
+    return response
+
+
 def wait_and_verify_stop(client, device_serial, max_attempts=STOP_MAX_ATTEMPTS, wait_between=STOP_WAIT_BETWEEN):
     """
     Verify that device has stopped (sta=6) - ONLY sta=6 is acceptable.
@@ -48,7 +69,8 @@ def wait_and_verify_stop(client, device_serial, max_attempts=STOP_MAX_ATTEMPTS, 
     device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
-        time.sleep(wait_between)
+        if attempt > 1:
+            time.sleep(wait_between)
         
         try:
             devices = client.get_eddi_devices()
@@ -102,7 +124,8 @@ def wait_and_verify_start(client, device_serial, max_attempts=START_MAX_ATTEMPTS
     device_not_found_count = 0
     
     for attempt in range(1, max_attempts + 1):
-        time.sleep(wait_between)
+        if attempt > 1:
+            time.sleep(wait_between)
         
         try:
             devices = client.get_eddi_devices()
@@ -171,7 +194,9 @@ def execute_command_with_retry(command, client, device_serial, max_retries=MAX_R
                 print(f"✗ Unknown command: {command}")
                 return False
             
-            print(f"Command sent: {result}")
+            # Sanitize response for logging (redact sensitive fields)
+            sanitized_result = _sanitize_api_response(result)
+            print(f"Command sent: {sanitized_result}")
             
             # Wait initial period for command to take effect
             if command == "stop":

@@ -47,10 +47,10 @@ echo "=========================================="
 
 # Run the helper script
 pixi run python scripts/eddi_control.py \
-    $COMMAND \
-    --serial $EDDI_SERIAL_NUMBER \
-    --api-key $EDDI_API_KEY \
-    --base-url ${EDDI_BASE_URL:-https://s18.myenergi.net} \
+    "$COMMAND" \
+    --serial "$EDDI_SERIAL_NUMBER" \
+    --api-key "$EDDI_API_KEY" \
+    --base-url "${EDDI_BASE_URL:-https://s18.myenergi.net}" \
     --max-retries 3
 
 EXIT_CODE=$?

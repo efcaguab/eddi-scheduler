@@ -65,7 +65,7 @@ jobs:
           command = None
           
           # Check if we should execute a command
-          # Allow 10 minutes window for execution (hourly cron runs at minute 0)
+          # Workflow runs at the start of each hour; execute if current time is within the first 10 minutes
           
           # Weekdays (Mon-Fri): Start at 10 AM
           if weekday in [0, 1, 2, 3, 4] and hour == 10 and minute < 10:
@@ -112,7 +112,7 @@ jobs:
                   '--api-key', api_key,
                   '--base-url', base_url,
                   '--max-retries', '3'
-              ])
+              ], check=False)
               
               sys.exit(result.returncode)
           
@@ -125,9 +125,16 @@ jobs:
           EDDI_API_KEY: ${{ secrets.EDDI_API_KEY }}
           EDDI_BASE_URL: ${{ secrets.EDDI_BASE_URL }}
         run: |
+          CMD="${{ github.event.inputs.command }}"
+          
+          if [ "$CMD" != "start" ] && [ "$CMD" != "stop" ]; then
+            echo "✗ ERROR: Invalid command: '$CMD'. Allowed values are 'start' or 'stop'."
+            exit 1
+          fi
+          
           pixi run python scripts/eddi_control.py \
-            ${{ github.event.inputs.command }} \
-            --serial $EDDI_SERIAL_NUMBER \
-            --api-key $EDDI_API_KEY \
-            --base-url ${EDDI_BASE_URL:-https://s18.myenergi.net} \
+            "$CMD" \
+            --serial "$EDDI_SERIAL_NUMBER" \
+            --api-key "$EDDI_API_KEY" \
+            --base-url "${EDDI_BASE_URL:-https://s18.myenergi.net}" \
             --max-retries 3
