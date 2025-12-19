@@ -1,0 +1,140 @@
+name: Eddi Scheduler
+
+on:
+  # Run every hour to check if it's time to execute
+  schedule:
+    - cron: '0 * * * *'  # Every hour at minute 0
+  
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command to execute'
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+
+# Prevent concurrent executions
+concurrency:
+  group: eddi-control
+  cancel-in-progress: false
+
+jobs:
+  check-and-execute:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: latest
+      
+      - name: Check New Zealand time and execute command
+        if: github.event_name == 'schedule'
+        env:
+          EDDI_SERIAL_NUMBER: ${{ secrets.EDDI_SERIAL_NUMBER }}
+          EDDI_API_KEY: ${{ secrets.EDDI_API_KEY }}
+          EDDI_BASE_URL: ${{ secrets.EDDI_BASE_URL }}
+        run: |
+          # Python script to check NZ time and determine action
+          pixi run python << 'PYTHON_SCRIPT'
+          import os
+          import sys
+          import subprocess
+          from datetime import datetime
+          import pytz
+          
+          # Get current time in NZ timezone
+          nz_tz = pytz.timezone('Pacific/Auckland')
+          now_nz = datetime.now(nz_tz)
+          
+          # Extract time components
+          hour = now_nz.hour
+          minute = now_nz.minute
+          weekday = now_nz.weekday()  # 0=Monday, 6=Sunday
+          
+          print(f"Current NZ time: {now_nz.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+          print(f"Weekday: {weekday} (0=Mon, 6=Sun)")
+          print(f"Hour: {hour}, Minute: {minute}")
+          
+          command = None
+          
+          # Check if we should execute a command
+          # Workflow runs at the start of each hour; execute if current time is within the first 10 minutes
+          
+          # Weekdays (Mon-Fri): Start at 10 AM
+          if weekday in [0, 1, 2, 3, 4] and hour == 10 and minute < 10:
+              command = "start"
+              print("✓ Weekday 10 AM - Time to START")
+          
+          # Weekdays (Mon-Fri): Stop at 5 PM
+          elif weekday in [0, 1, 2, 3, 4] and hour == 17 and minute < 10:
+              command = "stop"
+              print("✓ Weekday 5 PM - Time to STOP")
+          
+          # Saturday: Start at 5 AM
+          elif weekday == 5 and hour == 5 and minute < 10:
+              command = "start"
+              print("✓ Saturday 5 AM - Time to START")
+          
+          # Sunday: Stop at 10 PM
+          elif weekday == 6 and hour == 22 and minute < 10:
+              command = "stop"
+              print("✓ Sunday 10 PM - Time to STOP")
+          
+          else:
+              print("⊘ Not a scheduled time - no action needed")
+              sys.exit(0)
+          
+          # Execute command if needed
+          if command:
+              serial = os.environ.get('EDDI_SERIAL_NUMBER')
+              api_key = os.environ.get('EDDI_API_KEY')
+              base_url = os.environ.get('EDDI_BASE_URL', 'https://s18.myenergi.net')
+              
+              if not serial or not api_key:
+                  print("✗ ERROR: Missing EDDI_SERIAL_NUMBER or EDDI_API_KEY secrets")
+                  sys.exit(1)
+              
+              print(f"\nExecuting: {command.upper()}")
+              print("="*60)
+              
+              result = subprocess.run([
+                  'pixi', 'run', 'python',
+                  'scripts/eddi_control.py',
+                  command,
+                  '--serial', serial,
+                  '--api-key', api_key,
+                  '--base-url', base_url,
+                  '--max-retries', '3'
+              ], check=False)
+              
+              sys.exit(result.returncode)
+          
+          PYTHON_SCRIPT
+      
+      - name: Manual trigger command
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          EDDI_SERIAL_NUMBER: ${{ secrets.EDDI_SERIAL_NUMBER }}
+          EDDI_API_KEY: ${{ secrets.EDDI_API_KEY }}
+          EDDI_BASE_URL: ${{ secrets.EDDI_BASE_URL }}
+        run: |
+          CMD="${{ github.event.inputs.command }}"
+          
+          if [ "$CMD" != "start" ] && [ "$CMD" != "stop" ]; then
+            echo "✗ ERROR: Invalid command: '$CMD'. Allowed values are 'start' or 'stop'."
+            exit 1
+          fi
+          
+          pixi run python scripts/eddi_control.py \
+            "$CMD" \
+            --serial "$EDDI_SERIAL_NUMBER" \
+            --api-key "$EDDI_API_KEY" \
+            --base-url "${EDDI_BASE_URL:-https://s18.myenergi.net}" \
+            --max-retries 3
