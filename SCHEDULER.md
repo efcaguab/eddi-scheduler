@@ -105,7 +105,7 @@ Once merged to main, you can manually trigger the workflow:
 - **Workflow**: `.github/workflows/eddi-scheduler.yml`
 - **Local Test Script**: `test_workflow.sh`
 - **Timezone**: `Pacific/Auckland` (UTC+12/+13 with DST)
-- **Schedule Window**: 10 minutes (commands execute within 10 minutes of scheduled time)
+- **Schedule Window**: Full hour (commands execute any time during the scheduled hour)
 - **Max Retries**: 3 attempts with 30-second delays
 - **Stop Verification**: 
   - Initial wait: 30 seconds
