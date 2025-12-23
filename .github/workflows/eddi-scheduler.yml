@@ -65,25 +65,25 @@ jobs:
           command = None
           
           # Check if we should execute a command
-          # Workflow runs at the start of each hour; execute if current time is within the first 10 minutes
+          # Workflow runs hourly; execute if current hour matches schedule
           
-          # Weekdays (Mon-Fri): Start at 10 AM
-          if weekday in [0, 1, 2, 3, 4] and hour == 10 and minute < 10:
+          # Weekdays (Mon-Fri): Start at 11 AM
+          if weekday in [0, 1, 2, 3, 4] and hour == 11:
               command = "start"
-              print("✓ Weekday 10 AM - Time to START")
+              print("✓ Weekday 11 AM - Time to START")
           
           # Weekdays (Mon-Fri): Stop at 5 PM
-          elif weekday in [0, 1, 2, 3, 4] and hour == 17 and minute < 10:
+          elif weekday in [0, 1, 2, 3, 4] and hour == 17:
               command = "stop"
               print("✓ Weekday 5 PM - Time to STOP")
           
           # Saturday: Start at 5 AM
-          elif weekday == 5 and hour == 5 and minute < 10:
+          elif weekday == 5 and hour == 5:
               command = "start"
               print("✓ Saturday 5 AM - Time to START")
           
           # Sunday: Stop at 10 PM
-          elif weekday == 6 and hour == 22 and minute < 10:
+          elif weekday == 6 and hour == 22:
               command = "stop"
               print("✓ Sunday 10 PM - Time to STOP")
           
