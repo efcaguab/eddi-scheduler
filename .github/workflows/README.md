@@ -1,13 +1,13 @@
-# Automated Scheduler
+# Fer's Eddi Scheduler
 
-This repository includes a GitHub Actions workflow that automatically controls the eddi device based on a schedule.
+Personal GitHub Actions workflow that automatically controls the eddi device based on a schedule.
 
 ## Schedule (New Zealand Time)
 
 | Day | Time | Action |
 |-----|------|--------|
-| Monday-Friday | 10:00 AM | **START** (begin diverting) |
-| Monday-Friday | 5:00 PM | **STOP** (pause diverting) |
+| Monday-Friday | 11:00 AM | **START** (begin diverting) |
+| Monday-Friday | 4:00 PM | **STOP** (pause diverting) - scheduled at 4 PM to ensure it runs before 5 PM (GitHub Actions timing can vary) |
 | Saturday | 5:00 AM | **START** (begin diverting) |
 | Sunday | 10:00 PM | **STOP** (pause diverting) |
 
@@ -59,7 +59,7 @@ This requires a `.secrets` file in the project directory with your credentials (
 Once merged to main, you can manually trigger the workflow:
 
 1. Go to Actions tab in GitHub
-2. Select "Eddi Scheduler" workflow
+2. Select "Fer's Eddi Scheduler" workflow
 3. Click "Run workflow"
 4. Choose "start" or "stop" command
 5. Click "Run workflow" button
