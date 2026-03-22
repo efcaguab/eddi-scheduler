@@ -41,7 +41,8 @@ jobs:
           EDDI_API_KEY: ${{ secrets.EDDI_API_KEY }}
           EDDI_BASE_URL: ${{ secrets.EDDI_BASE_URL }}
         run: |
-          # Python script to check NZ time and determine action
+          # eddi_scheduler is available via editable install in pyproject.toml
+          # [tool.pixi.pypi-dependencies]: eddi-scheduler = { path = ".", editable = true }
           pixi run python << 'PYTHON_SCRIPT'
           import os
           import sys
@@ -49,47 +50,23 @@ jobs:
           from datetime import datetime
           import pytz
           
+          from eddi_scheduler.schedule import get_scheduled_command
+          
           # Get current time in NZ timezone
           nz_tz = pytz.timezone('Pacific/Auckland')
           now_nz = datetime.now(nz_tz)
           
-          # Extract time components
-          hour = now_nz.hour
-          minute = now_nz.minute
-          weekday = now_nz.weekday()  # 0=Monday, 6=Sunday
-          
           print(f"Current NZ time: {now_nz.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-          print(f"Weekday: {weekday} (0=Mon, 6=Sun)")
-          print(f"Hour: {hour}, Minute: {minute}")
+          print(f"Weekday: {now_nz.weekday()} (0=Mon, 6=Sun)")
+          print(f"Hour: {now_nz.hour}")
           
-          command = None
+          command = get_scheduled_command(now_nz)
           
-          # Check if we should execute a command
-          # Workflow runs hourly; execute if current hour matches schedule
-          
-          # Weekdays (Mon-Fri): Start at 11 AM
-          if weekday in [0, 1, 2, 3, 4] and hour == 11:
-              command = "start"
-              print("✓ Weekday 11 AM - Time to START")
-          
-          # Weekdays (Mon-Fri): Stop at 4 PM
-          elif weekday in [0, 1, 2, 3, 4] and hour == 16:
-              command = "stop"
-              print("✓ Weekday 4 PM - Time to STOP")
-          
-          # Saturday: Start at 5 AM
-          elif weekday == 5 and hour == 5:
-              command = "start"
-              print("✓ Saturday 5 AM - Time to START")
-          
-          # Sunday: Stop at 10 PM
-          elif weekday == 6 and hour == 22:
-              command = "stop"
-              print("✓ Sunday 10 PM - Time to STOP")
-          
-          else:
+          if command is None:
               print("⊘ Not a scheduled time - no action needed")
               sys.exit(0)
+          
+          print(f"✓ Scheduled action: {command.upper()}")
           
           # Execute command if needed
           if command:
