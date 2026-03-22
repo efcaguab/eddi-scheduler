@@ -621,11 +621,12 @@ packages:
 - pypi: ./
   name: eddi-scheduler
   version: 0.1.0
-  sha256: aa8c4c69f1254471ef705a3cfcbc89cb4e502c95a66d0ceece8a9eb2587faa62
+  sha256: 45aea6f90c25692d4e438aff9955aec6f000d0a651657c00779ab8076d375aaa
   requires_dist:
   - requests>=2.31.0
   - click>=8.1.0
   - python-dotenv>=1.0.0
+  - pytz>=2024.1
   - pytest>=7.0.0 ; extra == 'dev'
   - pytest-cov>=4.0.0 ; extra == 'dev'
   requires_python: '>=3.8'

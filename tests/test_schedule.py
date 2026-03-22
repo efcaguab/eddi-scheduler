@@ -1,7 +1,7 @@
 """Tests for the eddi schedule logic."""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone, tzinfo
 
 import pytz
 
@@ -121,3 +121,36 @@ class TestTransitions:
         """First action after weekend is Monday morning stop."""
         # Monday 2026-03-23
         assert get_scheduled_command(_nz(2026, 3, 23, 6)) == "stop"
+
+
+# --- Timezone handling tests ---
+
+class TestTimezoneHandling:
+    def test_naive_datetime_raises(self):
+        with pytest.raises(ValueError, match="timezone-aware"):
+            get_scheduled_command(datetime(2026, 3, 23, 6))
+
+    def test_broken_tzinfo_raises(self):
+        """A tzinfo that returns None from utcoffset() is effectively naive."""
+
+        class BrokenTZ(tzinfo):
+            def utcoffset(self, dt):
+                return None
+            def tzname(self, dt):
+                return "BAD"
+            def dst(self, dt):
+                return None
+
+        broken = datetime(2026, 3, 23, 6, tzinfo=BrokenTZ())
+        with pytest.raises(ValueError, match="timezone-aware"):
+            get_scheduled_command(broken)
+
+    def test_utc_converted_to_nz(self):
+        # Monday 2026-03-23 6 AM NZ = Sunday 2026-03-22 17:00 UTC (NZDT = UTC+13)
+        utc_time = datetime(2026, 3, 22, 17, 0, 0, tzinfo=timezone.utc)
+        assert get_scheduled_command(utc_time) == "stop"
+
+    def test_utc_non_trigger_hour(self):
+        # Monday 2026-03-23 noon NZ = Sunday 2026-03-22 23:00 UTC
+        utc_time = datetime(2026, 3, 22, 23, 0, 0, tzinfo=timezone.utc)
+        assert get_scheduled_command(utc_time) is None

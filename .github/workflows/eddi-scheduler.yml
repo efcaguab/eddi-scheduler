@@ -41,7 +41,8 @@ jobs:
           EDDI_API_KEY: ${{ secrets.EDDI_API_KEY }}
           EDDI_BASE_URL: ${{ secrets.EDDI_BASE_URL }}
         run: |
-          # Check NZ time and determine action using schedule module
+          # eddi_scheduler is available via editable install in pyproject.toml
+          # [tool.pixi.pypi-dependencies]: eddi-scheduler = { path = ".", editable = true }
           pixi run python << 'PYTHON_SCRIPT'
           import os
           import sys
