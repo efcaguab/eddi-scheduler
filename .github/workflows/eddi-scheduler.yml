@@ -61,7 +61,7 @@ jobs:
           print(f"Hour: {now_nz.hour}")
           
           command = get_scheduled_command(now_nz)
-          
+
           if command is None:
               print("⊘ Not a scheduled time - no action needed")
               sys.exit(0)
