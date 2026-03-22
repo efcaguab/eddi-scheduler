@@ -4,12 +4,24 @@ Personal GitHub Actions workflow that automatically controls the eddi device bas
 
 ## Schedule (New Zealand Time)
 
-| Day | Time | Action |
-|-----|------|--------|
-| Monday-Friday | 11:00 AM | **START** (begin diverting) |
-| Monday-Friday | 4:00 PM | **STOP** (pause diverting) - scheduled at 4 PM to ensure it runs before 5 PM (GitHub Actions timing can vary) |
-| Saturday | 5:00 AM | **START** (begin diverting) |
-| Sunday | 10:00 PM | **STOP** (pause diverting) |
+The device runs an **inverted schedule**: it is **OFF** during weekday peak periods and **ON** all other times (including weekends).
+
+### Weekday OFF periods (Mon-Fri)
+
+| Time | Action |
+|------|--------|
+| 6:00 AM | **STOP** — morning off-period begins |
+| 11:00 AM | **START** — morning off-period ends |
+| 4:00 PM | **STOP** — evening off-period begins |
+| 10:00 PM | **START** — evening off-period ends |
+
+### Weekend
+
+The device stays ON for the entire weekend. A defensive **START** command runs Saturday at 6:00 AM to guard against missed Friday transitions or manual overrides.
+
+### State assumption
+
+The device maintains its state between scheduled commands. After the Friday 10 PM start, it remains ON through the weekend until Monday 6 AM.
 
 ## How It Works
 
